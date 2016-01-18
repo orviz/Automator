@@ -316,10 +316,10 @@ def launch_checkdbs():
              db.close()
         except:
             main_log.error("Can't connect to " + dbname)
-            print("ERROR: Can't connect to " + dbname)
+            #print("ERROR: Can't connect to " + dbname)
             db = MySQLdb.connect(user = db_user, passwd = db_password)
             cursor = db.cursor()
-            query = "CREATE DATABASE " + dbname + " CHARACTER SET utf8"
+            query = "CREATE DATABASE " + dbname + " CHARACTER SET utf8;"
             cursor.execute(query)
             db.close()
             main_log.info(dbname+" created")
@@ -356,7 +356,6 @@ def launch_post_tool_scripts(tool):
         main_log.info("No %s post scripts configured" % tool)
 
 def launch_cvsanaly():
-
     log_file = log_files['cvsanaly']
     cvsanaly_log = logs(log_file, MAX_LOG_BYTES, MAX_LOG_FILES)
 
@@ -371,7 +370,6 @@ def launch_cvsanaly():
         db_user = options['generic']['db_user']
         db_pass = options['generic']['db_password']
         if (db_pass == ""): db_pass = "''"
-
 
         # we launch cvsanaly against the repos
         repos = get_scm_repos()
@@ -500,9 +498,18 @@ def launch_gather():
 
     from multiprocessing import Process, active_children
 
-    gather_tasks_order = ['cvsanaly','bicho','gerrit','mlstats',
-                          'irc','mediawiki', 'downloads', 'sibyl',
-                          'octopus','pullpo','eventizer']
+    gather_tasks_order = ['cvsanaly',
+                          'bicho',
+                          #'gerrit',
+                          #'mlstats',
+                          #'irc',
+                          #'mediawiki',
+                          #'downloads',
+                          #'sibyl',
+                          #'octopus',
+                          'pullpo',
+                          #'eventizer'
+                          ]
     for section in gather_tasks_order:
         p = Process(target=tasks_section_gather[section])
         p.start()
@@ -695,7 +702,7 @@ def launch_mlstats():
         # Retrieving mailing lists
         if options['mlstats'].has_key('mailing_lists'):
             mlists = options['mlstats']['mailing_lists'].split(",")
-            mlists = [m[m.find('"')+1:m.rfind('"')] for m in mlists]
+            mlists = [m.strip(' "') for m in mlists]
         else:
             mlists = repositories(MLSTATS_MAILING_LISTS)
 
@@ -1262,7 +1269,6 @@ def launch_sortinghat():
     io_file = NamedTemporaryFile()
     io_file_name = io_file.name
     io_file.close()
-
     # Import data in Sorting Hat
     for ds in dss:
         if ds.get_name() in dss_not_supported: continue
@@ -1461,7 +1467,6 @@ def launch_pullpo():
 
         pullpo_cmd = tools['pullpo'] + " -u \"%s\" -p \"%s\" -d \"%s\" %s %s " \
                           %(db_user, db_pass, db_name, auth_params , url)
-
         for owner in owners:
             projects = None
             if options['pullpo'].has_key('projects') and len(owners) == 1:
@@ -1605,11 +1610,13 @@ def launch_events_scripts():
 
         main_log.info("events being generated")
 
-        json_dir = '../../../json'
+        #json_dir = '../../../json'
+        json_dir = os.path.join(project_dir, "json")
         conf_file = project_dir + '/conf/main.conf'
         log_file = project_dir + '/log/analysis_'
 
-        metrics_tool = "report_tool.py"
+        #metrics_tool = "report_tool.py"
+        metrics_tool = os.path.join(project_dir, "tools", "GrimoireLib", "vizGrimoireJS", "report_tool.py")
         path = r_dir
 
         params = get_options()
@@ -1629,11 +1636,14 @@ def launch_events_scripts():
         for ds in dss:
             if ds.get_name() not in ds_events_supported: continue
             log_file_ds = log_file + ds.get_name()+"-events.log"
-            os.chdir(path)
-            cmd = "./%s -c %s -o %s --data-source %s --events  >> %s 2>&1" \
-                % (metrics_tool, conf_file, json_dir, ds.get_name(), log_file_ds)
+            #os.chdir(path)
+            #cmd = "./%s -c %s -o %s --data-source %s --events  >> %s 2>&1" \
+            #    % (metrics_tool, conf_file, json_dir, ds.get_name(), log_file_ds)
+            python_libs = os.path.join(project_dir, "tools", "GrimoireLib")
+            cmd = "PYTHONPATH=%s %s -c %s -o %s --data-source %s --events  >> %s 2>&1" \
+                % (python_libs, metrics_tool, conf_file, json_dir, ds.get_name(), log_file_ds)
             commands.append([cmd])
-
+        print ">>>> COMMANDS: ", commands
         exec_commands (commands)
 
         main_log.info("[OK] events generated")
@@ -1653,14 +1663,17 @@ def launch_metrics_scripts():
         main_log.info("metrics tool being launched")
 
         r_libs = '../../r-lib'
-        python_libs = '../grimoirelib_alch:../vizgrimoire:../vizgrimoire/analysis:../vizgrimoire/metrics:./'
-        json_dir = '../../../json'
+        #python_libs = '../grimoirelib_alch:../vizgrimoire:../vizgrimoire/analysis:../vizgrimoire/metrics:./'
+        python_libs = os.path.join(project_dir, "tools", "GrimoireLib")
+        #json_dir = '../../../json'
+        json_dir = os.path.join(project_dir, "json")
         metrics_dir = '../vizgrimoire/metrics'
         conf_file = project_dir + '/conf/main.conf'
         log_file = project_dir + '/log/analysis_'
 
 
-        metrics_tool = "report_tool.py"
+        #metrics_tool = "report_tool.py"
+        metrics_tool = os.path.join(project_dir, "tools", "GrimoireLib", "vizGrimoireJS", "report_tool.py")
         path = r_dir
 
         launch_pre_tool_scripts('r')
@@ -1686,8 +1699,11 @@ def launch_metrics_scripts():
         for ds in dss:
             # if ds.get_name() not in ['scm','its']: continue
             log_file_ds = log_file + ds.get_name()+".log"
-            os.chdir(path)
-            cmd = "LANG= R_LIBS=%s PYTHONPATH=%s ./%s -c %s -m %s -o %s --data-source %s %s >> %s 2>&1" \
+            #os.chdir(path)
+            #cmd = "LANG= R_LIBS=%s PYTHONPATH=%s ./%s -c %s -m %s -o %s --data-source %s %s >> %s 2>&1" \
+            #    % (r_libs, python_libs, metrics_tool, conf_file, metrics_dir, json_dir, ds.get_name(), metrics_section, log_file_ds)
+            python_libs = os.path.join(project_dir, "tools", "GrimoireLib")
+            cmd = "LANG= R_LIBS=%s PYTHONPATH=%s %s -c %s -m %s -o %s --data-source %s %s >> %s 2>&1" \
                 % (r_libs, python_libs, metrics_tool, conf_file, metrics_dir, json_dir, ds.get_name(), metrics_section, log_file_ds)
             commands.append([cmd])
 
@@ -2081,32 +2097,32 @@ def get_project_info():
 tasks_section_gather = {
     'cvsanaly':launch_cvsanaly,
     'bicho':launch_bicho,
-    'downloads': launch_downloads,
-    'gerrit':launch_gerrit,
-    'irc': launch_irc,
-    'mediawiki': launch_mediawiki,
-    'mlstats':launch_mlstats,
-    'sibyl': launch_sibyl,
-    'octopus': launch_octopus,
+    #'downloads': launch_downloads,
+    #'gerrit':launch_gerrit,
+    #'irc': launch_irc,
+    #'mediawiki': launch_mediawiki,
+    #'mlstats':launch_mlstats,
+    #'sibyl': launch_sibyl,
+    #'octopus': launch_octopus,
     'pullpo': launch_pullpo,
-    'eventizer': launch_eventizer
+    #'eventizer': launch_eventizer
 }
 
 tasks_section = dict({
     'check-dbs':launch_checkdbs,
-    'copy-json': launch_copy_json,
-    'db-dump':launch_database_dump,
+    #'copy-json': launch_copy_json,
+    #'db-dump':launch_database_dump,
     'gather':launch_gather,
-    'git-production':launch_commit_jsones,
-    'identities': launch_identity_scripts,
+    #'git-production':launch_commit_jsones,
+    #'identities': launch_identity_scripts,
     'sortinghat': launch_sortinghat,
-    'json-dump':launch_json_dump,
+    #'json-dump':launch_json_dump,
     'events':launch_events_scripts,
     'metrics':launch_metrics_scripts,
-    'metricsdef':launch_metricsdef_config,
-    'r':launch_metrics_scripts, # compatibility support
-    'rsync':launch_rsync,
-    'vizjs':launch_vizjs_config
+    #'metricsdef':launch_metricsdef_config,
+    #'r':launch_metrics_scripts, # compatibility support
+    #'rsync':launch_rsync,
+    #'vizjs':launch_vizjs_config
     }.items() + tasks_section_gather.items())
 
 
@@ -2119,8 +2135,18 @@ tasks_order_serial = ['check-dbs','cvsanaly','bicho','gerrit','mlstats','irc','m
                       'git-production','db-dump','json-dump','rsync']
 
 # Use this for parallel execution of data gathering
-tasks_order_parallel = ['check-dbs','gather','sortinghat','events','metrics','copy-json',
-                        'git-production','db-dump','json-dump','rsync']
+tasks_order_parallel = [
+    'check-dbs',
+    'gather',
+    'sortinghat',
+    'events',
+    'metrics',
+    #'copy-json',
+    #'git-production',
+    #'db-dump',
+    #'json-dump',
+    #'rsync'
+]
 
 tasks_order = tasks_order_parallel
 
@@ -2149,7 +2175,6 @@ if __name__ == '__main__':
         else:
             # no pid file, let's create it
             file(pidfile, 'w').write(pid)
-
         main_log = logs(msg_body, MAX_LOG_BYTES, MAX_LOG_FILES)
         main_log.info("Starting ..")
         read_main_conf()
