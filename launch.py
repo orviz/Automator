@@ -275,6 +275,7 @@ def launch_checkdbs():
     dbs = []
     db_user = options['generic']['db_user']
     db_password = options['generic']['db_password']
+    db_host = options['generic']['db_host']
 
     if options['generic'].has_key('db_identities'):
         dbs.append(options['generic']['db_identities'])
@@ -312,7 +313,7 @@ def launch_checkdbs():
         dbs.append(options['generic']['db_octopus'])
     for dbname in dbs:
         try:
-             db = MySQLdb.connect(user = db_user, passwd = db_password,  db = dbname)
+             db = MySQLdb.connect(user = db_user, passwd = db_password,  db = dbname, host = db_host)
              db.close()
         except:
             main_log.error("Can't connect to " + dbname)
