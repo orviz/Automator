@@ -43,6 +43,8 @@ from tempfile import NamedTemporaryFile
 from ConfigParser import SafeConfigParser
 
 import MySQLdb
+from _mysql_exceptions import OperationalError
+
 
 # conf variables from file(see read_main_conf)
 options = {}
@@ -317,13 +319,12 @@ def launch_checkdbs():
              db.close()
         except:
             main_log.error("Can't connect to " + dbname)
-            #print("ERROR: Can't connect to " + dbname)
-            db = MySQLdb.connect(user = db_user, passwd = db_password)
-            cursor = db.cursor()
-            query = "CREATE DATABASE " + dbname + " CHARACTER SET utf8;"
-            cursor.execute(query)
-            db.close()
-            main_log.info(dbname+" created")
+	    db = MySQLdb.connect(user = db_user, passwd = db_password, host = db_host)
+	    cursor = db.cursor()
+	    query = "CREATE DATABASE " + dbname + " CHARACTER SET utf8;"
+	    cursor.execute(query)
+	    db.close()
+	    main_log.info(dbname+" created")
 
 def launch_scripts(scripts):
     # Run a list of scripts
@@ -2176,6 +2177,7 @@ if __name__ == '__main__':
         else:
             # no pid file, let's create it
             file(pidfile, 'w').write(pid)
+
         main_log = logs(msg_body, MAX_LOG_BYTES, MAX_LOG_FILES)
         main_log.info("Starting ..")
         read_main_conf()
@@ -2202,7 +2204,11 @@ if __name__ == '__main__':
             print(e)
             if os.path.isfile(project_dir+"/launch.pid"):
                 os.remove(project_dir+"/launch.pid")
-    except:
+    except OperationalError, e:
+	print e.args[1]
+	sys.exit(e.args[0])
+    except Exception, e:
         print(sys.exc_info())
         if os.path.isfile(project_dir+"/launch.pid"):
             os.remove(project_dir+"/launch.pid")
+	sys.exit(e.args[0])
