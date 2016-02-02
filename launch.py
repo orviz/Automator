@@ -1295,7 +1295,7 @@ def launch_sortinghat():
     db_pass_id = db_pass
     if db_pass_id == '': db_pass_id = "''"
     identifier2sh = identities_dir + '/identifier2sh.py'
-    cmd = identifier2sh + " -u %s -p %s -d \"%s\" " % (db_user, db_pass_id, db_name)
+    cmd = identifier2sh + " -u %s -p %s -d \"%s\" --db-host %s" % (db_user, db_pass_id, db_name, db_host)
     sortinghat_log.info(cmd)
     os.system(cmd)
 
