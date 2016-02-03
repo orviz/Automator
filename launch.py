@@ -371,6 +371,7 @@ def launch_cvsanaly():
         db_name = options['generic']['db_cvsanaly']
         db_user = options['generic']['db_user']
         db_pass = options['generic']['db_password']
+        db_host = options['generic']['db_host']
         if (db_pass == ""): db_pass = "''"
 
         # we launch cvsanaly against the repos
@@ -383,11 +384,11 @@ def launch_cvsanaly():
             launched = True
             os.chdir(r)
             if options['cvsanaly'].has_key('extensions'):
-                cmd = tools['scm'] + " -u %s -p %s -d %s --extensions=%s >> %s 2>&1" \
-                        %(db_user, db_pass, db_name, options['cvsanaly']['extensions'], log_file)
+                cmd = tools['scm'] + " -u %s -p %s -d %s -H %s --extensions=%s >> %s 2>&1" \
+                        %(db_user, db_pass, db_name, db_host, options['cvsanaly']['extensions'], log_file)
             else:
-                cmd = tools['scm'] + " -u %s -p %s -d %s >> %s 2>&1" \
-                        %(db_user, db_pass, db_name, log_file)
+                cmd = tools['scm'] + " -u %s -p %s -d %s -H %s >> %s 2>&1" \
+                        %(db_user, db_pass, db_name, db_host, log_file)
 
             cvsanaly_log.info(cmd)
             os.system(cmd)
@@ -1220,19 +1221,19 @@ def launch_octopus_gerrit():
         main_log.info("[skipped] octopus for gerrit not executed")
 
 
-def check_sortinghat_db(db_user, db_pass, db_name):
+def check_sortinghat_db(db_user, db_pass, db_name, db_host):
     """ Check that the db exists and if not, create it """
     log_file = log_files['sortinghat_affiliations']
     sortinghat_affiliations_log = logs(log_file, MAX_LOG_BYTES, MAX_LOG_FILES)
     try:
-         db = MySQLdb.connect(user = db_user, passwd = db_pass,  db = db_name)
+         db = MySQLdb.connect(user = db_user, passwd = db_pass,  db = db_name, host = db_host)
          db.close()
          main_log.info("Sortinghat " + db_name + " already exists")
     except:
         main_log.error("Can't connect to " + db_name)
         main_log.info("Creating sortinghat database ...")
-        cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" init \"%s\">> %s 2>&1" \
-                      %(db_user, db_pass, db_name, log_file)
+        cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" --host=%s init \"%s\">> %s 2>&1" \
+                      %(db_user, db_pass, db_host, db_name, log_file)
         sortinghat_affiliations_log.info(cmd)
         os.system(cmd)
 
@@ -1248,10 +1249,11 @@ def launch_sortinghat():
     db_user = options['generic']['db_user']
     db_pass = options['generic']['db_password']
     db_name = options['generic']['db_sortinghat']
+    db_host = options['generic']['db_host']
     log_file = log_files['sortinghat']
     sortinghat_log = logs(log_file, MAX_LOG_BYTES, MAX_LOG_FILES)
 
-    check_sortinghat_db(db_user, db_pass, db_name)
+    check_sortinghat_db(db_user, db_pass, db_name, db_host)
 
     # pre-scripts
     launch_pre_tool_scripts('sortinghat')
@@ -1280,13 +1282,13 @@ def launch_sortinghat():
             main_log.error(ds.get_db_name() + " not in automator main.conf")
             continue
         # Export identities from ds
-        cmd = tools['mg2sh'] + " -u \"%s\" -p \"%s\" -d \"%s\" --source \"%s:%s\" -o %s >> %s 2>&1" \
-                      %(db_user, db_pass, db_ds, project_name.lower(), ds.get_name(), io_file_name, log_file)
+        cmd = tools['mg2sh'] + " -u \"%s\" -p \"%s\" --host=%s -d \"%s\" --source \"%s:%s\" -o %s >> %s 2>&1" \
+                      %(db_user, db_pass, db_host, db_ds, project_name.lower(), ds.get_name(), io_file_name, log_file)
         sortinghat_log.info(cmd)
         os.system(cmd)
         # Load identities in sortinghat in incremental mode
-        cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" load --matching email-name -n %s >> %s 2>&1" \
-                      %(db_user, db_pass, db_name, io_file_name, log_file)
+        cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" --host=%s -d \"%s\" load --matching email-name -n %s >> %s 2>&1" \
+                      %(db_user, db_pass, db_host, db_name, io_file_name, log_file)
         sortinghat_log.info(cmd)
         os.system(cmd)
         os.remove(io_file_name)
@@ -1300,8 +1302,8 @@ def launch_sortinghat():
     os.system(cmd)
 
     # Do affiliations
-    cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" affiliate  >> %s 2>&1" \
-              %(db_user, db_pass, db_name, log_file)
+    cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s affiliate  >> %s 2>&1" \
+              %(db_user, db_pass, db_name, db_host, log_file)
     sortinghat_log.info(cmd)
     os.system(cmd)
 
@@ -1314,13 +1316,13 @@ def launch_sortinghat():
             main_log.error(ds.get_db_name() + " not in automator main.conf")
             continue
         # Export identities from sh to file
-        cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" export --source \"%s:%s\" --identities %s >> %s 2>&1" \
-                      %(db_user, db_pass, db_name, project_name.lower(), ds.get_name(), io_file_name, log_file)
+        cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s export --source \"%s:%s\" --identities %s >> %s 2>&1" \
+                      %(db_user, db_pass, db_name, db_host, project_name.lower(), ds.get_name(), io_file_name, log_file)
         sortinghat_log.info(cmd)
         os.system(cmd)
         # Load identities in mg from file
-        cmd = tools['sh2mg'] + " -u \"%s\" -p \"%s\" -d \"%s\" --source \"%s:%s\" %s >> %s 2>&1" \
-                      %(db_user, db_pass, db_ds, project_name.lower(), ds.get_name(), io_file_name, log_file)
+        cmd = tools['sh2mg'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s --source \"%s:%s\" %s >> %s 2>&1" \
+                      %(db_user, db_pass, db_ds, db_host, project_name.lower(), ds.get_name(), io_file_name, log_file)
         sortinghat_log.info(cmd)
         os.system(cmd)
         os.remove(io_file_name)
@@ -1328,8 +1330,8 @@ def launch_sortinghat():
     # Create domains tables
     if db_pass == '': db_pass = "''"
     db_sortinghat = options['generic']['db_sortinghat']
-    cmd = "%s/domains_analysis.py -u %s -p %s -d %s --sortinghat>> %s 2>&1" \
-        % (identities_dir, db_user, db_pass, db_name, log_file)
+    cmd = "%s/domains_analysis.py -u %s -p %s -d %s --db-hostname=%s --sortinghat>> %s 2>&1" \
+        % (identities_dir, db_user, db_pass, db_name, db_host, log_file)
     sortinghat_log.info(cmd)
     os.system(cmd)
 
@@ -1645,7 +1647,7 @@ def launch_events_scripts():
             cmd = "PYTHONPATH=%s %s -c %s -o %s --data-source %s --events  >> %s 2>&1" \
                 % (python_libs, metrics_tool, conf_file, json_dir, ds.get_name(), log_file_ds)
             commands.append([cmd])
-        print ">>>> COMMANDS: ", commands
+	main_log.info("Running report_tool.py: %s" % commands)
         exec_commands (commands)
 
         main_log.info("[OK] events generated")
@@ -1738,6 +1740,7 @@ def launch_identity_scripts():
         idir = identities_dir
         db_user = options['generic']['db_user']
         db_pass = options['generic']['db_password']
+	db_host = options['generic']['db_host']
         if (db_pass == ""): db_pass="''"
         log_file = log_files['identities']
         identities_log = logs(log_file, MAX_LOG_BYTES, MAX_LOG_FILES)
@@ -1753,7 +1756,7 @@ def launch_identity_scripts():
             cmd = "%s/unifypeople.py -u %s -p %s -d %s >> %s 2>&1" % (idir, db_user, db_pass, db_identities, log_file)
             identities_log.info(cmd)
             os.system(cmd)
-            cmd = "%s/domains_analysis.py -u %s -p %s -d %s >> %s 2>&1" % (idir, db_user, db_pass, db_identities, log_file)
+            cmd = "%s/domains_analysis.py -u %s -p %s -d %s --db-hostname=%s >> %s 2>&1" % (idir, db_user, db_pass, db_identities, db_host, log_file)
             identities_log.info(cmd)
             os.system(cmd)
 
@@ -2198,12 +2201,16 @@ if __name__ == '__main__':
 
         os.unlink(pidfile)
     except SystemExit as e:
-        if e[0]==1:
-            print("Finished OK")
-        else:
-            print(e)
-            if os.path.isfile(project_dir+"/launch.pid"):
-                os.remove(project_dir+"/launch.pid")
+        # ??????????????????
+	#if e[0]==1:
+        #    print("Finished OK")
+        #else:
+        #    print(e)
+        #    if os.path.isfile(project_dir+"/launch.pid"):
+        #        os.remove(project_dir+"/launch.pid")
+        if os.path.isfile(project_dir+"/launch.pid"):
+    	    os.remove(project_dir+"/launch.pid")
+	sys.exit(e.args[0])
     except OperationalError, e:
 	print e.args[1]
 	sys.exit(e.args[0])
