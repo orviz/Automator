@@ -423,6 +423,7 @@ def do_bicho(section = None):
         database = options['generic']['db_' + section]
         db_user = options['generic']['db_user']
         db_pass = options['generic']['db_password']
+        db_host = options['generic']['db_host']
         delay = options[section]['delay']
         backend = options[section]['backend']
         backend_user = backend_password = None
@@ -481,8 +482,8 @@ def do_bicho(section = None):
             if num_issues_query:
                 user_opt = user_opt + ' --num-issues=%s' % (num_issues_query)
 
-            cmd = tools['its'] + " --db-user-out=%s --db-password-out=%s --db-database-out=%s -d %s -b %s %s -u %s %s >> %s 2>&1" \
-                        % (db_user, db_pass, database, str(delay), backend, user_opt, t, flags, log_file)
+            cmd = tools['its'] + " --db-user-out=%s --db-password-out=%s --db-database-out=%s --db-hostname-out=%s -d %s -b %s %s -u %s %s >> %s 2>&1" \
+                        % (db_user, db_pass, database, db_host, str(delay), backend, user_opt, t, flags, log_file)
             bicho_log.info(cmd)
             os.system(cmd)
         if launched:
@@ -1447,6 +1448,7 @@ def launch_pullpo():
         db_user = options['generic']['db_user']
         db_pass = options['generic']['db_password']
         db_name = options['generic']['db_pullpo']
+        db_host = options['generic']['db_host']
         owner = options['pullpo']['owner']
         owners = owner.split(",")
         if options['pullpo'].has_key('oauth_key'):
@@ -1469,8 +1471,8 @@ def launch_pullpo():
         else:
             auth_params = "--gh-user=\""+user+"\" --gh-password=\""+password+"\""
 
-        pullpo_cmd = tools['pullpo'] + " -u \"%s\" -p \"%s\" -d \"%s\" %s %s " \
-                          %(db_user, db_pass, db_name, auth_params , url)
+        pullpo_cmd = tools['pullpo'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s %s %s " \
+                          %(db_user, db_pass, db_name, db_host, auth_params , url)
         for owner in owners:
             projects = None
             if options['pullpo'].has_key('projects') and len(owners) == 1:
