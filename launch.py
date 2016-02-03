@@ -1282,12 +1282,12 @@ def launch_sortinghat():
             main_log.error(ds.get_db_name() + " not in automator main.conf")
             continue
         # Export identities from ds
-        cmd = tools['mg2sh'] + " -u \"%s\" -p \"%s\" --host=%s -d \"%s\" --source \"%s:%s\" -o %s >> %s 2>&1" \
+        cmd = "python3.4 " + tools['mg2sh'] + " -u \"%s\" -p \"%s\" --host=%s -d \"%s\" --source \"%s:%s\" -o %s >> %s 2>&1" \
                       %(db_user, db_pass, db_host, db_ds, project_name.lower(), ds.get_name(), io_file_name, log_file)
         sortinghat_log.info(cmd)
         os.system(cmd)
         # Load identities in sortinghat in incremental mode
-        cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" --host=%s -d \"%s\" load --matching email-name -n %s >> %s 2>&1" \
+        cmd = "python3.4 " + tools['sortinghat'] + " -u \"%s\" -p \"%s\" --host=%s -d \"%s\" load --matching email-name -n %s >> %s 2>&1" \
                       %(db_user, db_pass, db_host, db_name, io_file_name, log_file)
         sortinghat_log.info(cmd)
         os.system(cmd)
@@ -1302,7 +1302,7 @@ def launch_sortinghat():
     os.system(cmd)
 
     # Do affiliations
-    cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s affiliate  >> %s 2>&1" \
+    cmd = "python3.4 " + tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s affiliate  >> %s 2>&1" \
               %(db_user, db_pass, db_name, db_host, log_file)
     sortinghat_log.info(cmd)
     os.system(cmd)
@@ -1316,12 +1316,12 @@ def launch_sortinghat():
             main_log.error(ds.get_db_name() + " not in automator main.conf")
             continue
         # Export identities from sh to file
-        cmd = tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s export --source \"%s:%s\" --identities %s >> %s 2>&1" \
+        cmd = "python3.4 " + tools['sortinghat'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s export --source \"%s:%s\" --identities %s >> %s 2>&1" \
                       %(db_user, db_pass, db_name, db_host, project_name.lower(), ds.get_name(), io_file_name, log_file)
         sortinghat_log.info(cmd)
         os.system(cmd)
         # Load identities in mg from file
-        cmd = tools['sh2mg'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s --source \"%s:%s\" %s >> %s 2>&1" \
+        cmd = "python3.4 " + tools['sh2mg'] + " -u \"%s\" -p \"%s\" -d \"%s\" --host=%s --source \"%s:%s\" %s >> %s 2>&1" \
                       %(db_user, db_pass, db_ds, db_host, project_name.lower(), ds.get_name(), io_file_name, log_file)
         sortinghat_log.info(cmd)
         os.system(cmd)
